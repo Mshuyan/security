@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shuyan.demo2.user.mapper.UserMapper">
+    <insert id="addUser" parameterType="com.shuyan.demo2.user.dto.UserDto">
+        insert into user(username,password,nick_name,roles) values(#{username},#{password},#{nickName},#{roles});
+    </insert>
+
+    <select id="getByUsername" parameterType="String" resultType="com.shuyan.demo2.user.dto.UserDto">
+        select * from user where username=#{userName};
+    </select>
+</mapper>

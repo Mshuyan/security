@@ -1,0 +1,11 @@
+### myJavaIgnore template
+/.idea
+*.iml
+*.cmd
+mvnw
+/.mvn
+/target
+/*/target
+.gitattributes
+*.jar
+/out
