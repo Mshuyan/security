@@ -200,6 +200,10 @@ security中没有默认的角色，每一个不同的字符串都可以认为是
 
     将从cookie中获取的`XSRF-TOKEN`的值设置到请求头中，该值对应的请求头名称为`X-XSRF-TOKEN`
 
+- `CookieCsrfTokenRepository`
+
+  > 该实现类是通过cookie方式防止csrf攻击，方案是将浏览器发来的请求中的表单参数或请求头，与自己下发的cookie进行比对，相等则通过
+
 ## PasswordEncoder
 
 > 该接口是用于密码加密的，每一个实现类都是1种加密算法
@@ -654,6 +658,67 @@ public class UserServiceImpl implements UserService {
 #### 客户端模式
 
 > 客户端模式其实与用户没有任何关系，客户端向认证服务器发送请求来验证自己的身份，通过验证后从资源服务器获取资源
+
+## CORS
+
+> 未使用`security`之前配置跨域，可以使用如下方法进行配置
+
+```java
+@Bean
+@Order(0)
+public FilterRegistrationBean corsFilter() {
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowCredentials(false);
+    // 设置你要允许的网站域名，如果全允许则设为 *
+    config.addAllowedOrigin("*");
+    // 如果要限制 HEADER 或 METHOD 请自行更改
+    config.addAllowedHeader("*");
+    config.addAllowedMethod("*");
+    config.addExposedHeader("Content-Disposition");
+    source.registerCorsConfiguration("/**", config);
+    return new FilterRegistrationBean<>(new CorsFilter(source));
+}
+```
+
+> 使用`security`之后，因为`login`接口是由`security`提供的，所以上述方法无法对`login`接口提供跨域支持，此时需要使用`security`提供的跨域方法
+
+在secirity配置类中：
+
+```java
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+    http.exceptionHandling()
+        .accessDeniedHandler(new CustomizeAccessDeniedHandler())
+        .authenticationEntryPoint(new CustomizeAuthenticationEntryPoint())
+        .and().authorizeRequests()
+        .antMatchers("/**.html").permitAll()
+        // 在这里配置cors
+        .and().cors().configurationSource(corsConfigurationSource())
+        .and().csrf().disable();
+    http.addFilterAt(jwtLoginFilter(), UsernamePasswordAuthenticationFilter.class);
+    http.addFilter(jwtAuthenticationFilter());
+    http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER);
+}
+
+private UrlBasedCorsConfigurationSource corsConfigurationSource(){
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowCredentials(false);
+    // 设置你要允许的网站域名，如果全允许则设为 *
+    config.addAllowedOrigin("*");
+    // 如果要限制 HEADER 或 METHOD 请自行更改
+    config.addAllowedHeader("*");
+    config.addAllowedMethod("*");
+    /* 非跨域请求时，服务端返回自定义的响应头前端能够获取到
+     * 跨域请求中前端获取不到，则服务端需要通过配置ExposedHeader来将这些头暴露出去
+     * 让前端可以获取到
+     */
+    config.addExposedHeader("Content-Disposition");
+    source.registerCorsConfiguration("/**", config);
+    return source;
+}
+```
 
 
 
