@@ -661,6 +661,8 @@ public class UserServiceImpl implements UserService {
 
 ## CORS
 
+### 配置
+
 > 未使用`security`之前配置跨域，可以使用如下方法进行配置
 
 ```java
@@ -706,6 +708,7 @@ private UrlBasedCorsConfigurationSource corsConfigurationSource(){
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(false);
     // 设置你要允许的网站域名，如果全允许则设为 *
+    // 只能设为 * 或具体的域名，不可以设置模糊的域名
     config.addAllowedOrigin("*");
     // 如果要限制 HEADER 或 METHOD 请自行更改
     config.addAllowedHeader("*");
@@ -720,5 +723,38 @@ private UrlBasedCorsConfigurationSource corsConfigurationSource(){
 }
 ```
 
+### 同源
 
+> security的cors中，如果`发起请求的页面`与`请求的接口`本身就是同源，则不会返回cors相关响应头
 
+在一次请求中，如果`Host`与`Origin`请求头同源，则不会返回cors相关响应头
+
+参见`org.springframework.web.util.isSameOrigin`方法
+
+#### 采坑记录
+
++ 场景
+
+  ​	后端开发完成后，将代码打包放在服务器上运行(端口8080)，并配置了nginx，nginx将请求转发给`localhost:8080`
+
+  ​	前端在开发人员本机开发，请求服务器端数据进行调试，其本机测试地址为`localhost:8080`
+
++ 问题
+
+  ​	当前端向后端发请求时，报错说跨域出错了
+
++ 分析
+
+  ​	前端本机发给服务器的请求：`Host`:`www.xxxx.com`，`Origin`:`localhost:8080`
+
+  ​	经nginx代理后：`Host`:`localhost:8080`，`Origin`:`localhost:8080`
+
+  ​	此时cors就会判定该请求为同源请求，不返回cors相关响应头
+
++ 解决方案
+
+  在nginx中配置，在dialing过程中，不替换`Host`请求头的值
+
+  ```shell
+  proxy_set_header Host $host;
+  ```
