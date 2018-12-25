@@ -758,3 +758,131 @@ private UrlBasedCorsConfigurationSource corsConfigurationSource(){
   ```shell
   proxy_set_header Host $host;
   ```
+
+## 前后端分离项目中使用security
+
+> 参见[Spring Security 访问控制-实现 RESTful API](https://blog.csdn.net/pomer_huang/article/details/77902392?utm_source=blogxgwz3) 
+
+重写如下处理器即可：
+
++ http.exceptionHandling().accessDeniedHandler()
++ http.exceptionHandling().authenticationEntryPoint()
++ http.formLogin().successHandler()
++ http.formLogin().failureHandler()
++ http.logout().logoutSuccessHandler()
+
+> demo参见[产业地图](https://github.com/Mshuyan/industry-map) 
+
+## 整合JWT
+
+> 参见：[Spring Security 初识（五）–spring security 和jwt整合](https://blog.csdn.net/itguangit/article/details/78960127) 
+
+security整合JWT是通过filter实现的，这里需要实现2个过滤器：登录过滤器，验证过滤器
+
+demo参见[产业地图](https://github.com/Mshuyan/industry-map) 
+
+## 控制session
+
+> 参见[spring security控制session](https://blog.csdn.net/neweastsun/article/details/79371175) 
+
+## 注解控制权限
+
+> 参见：
+>
+> + [Spring Security（16）——基于表达式的权限控制](https://www.cnblogs.com/fenglan/p/5913463.html) 
+> + [Spring Security（17）——基于方法的权限控制](https://www.cnblogs.com/fenglan/p/5913481.html) 
+> + [Spring Security 入门详解](https://www.cnblogs.com/jaylon/p/4905769.html) 
+
+### 启用注解控制权限
+
+需要在security配置类上加上如下注解
+
+```java
+@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+```
+
+### 注解
+
+#### @Secured与@RolesAllowed
+
++ `@RolesAllowed`
+
+  JSR250标准提供的注解，参数字符串不具备`SpEL`特性，是具体的权限
+
++ `@Secured`
+
+  与`@RolesAllowed`相同，是spring提供的
+
+#### 方法调用前后注解
+
+> 以下注解支持SpEL表达式，security支持的表达式如下：
+>
+> | 安全表达式                | 计算结果                                 |
+> | ------------------------- | ---------------------------------------- |
+> | authentication            | 用户认证对象                             |
+> | denyAll                   | 结果始终为false                          |
+> | hasAnyRole(list of roles) | 如果用户被授权指定的任意权限，结果为true |
+> | hasRole(role)             | 如果用户被授予了指定的权限，结果 为true  |
+> | hasIpAddress(IP Adress)   | 用户地址                                 |
+> | isAnonymous()             | 是否为匿名用户                           |
+> | isAuthenticated()         | 不是匿名用户                             |
+> | isFullyAuthenticated      | 不是匿名也不是remember-me认证            |
+> | isRemberMe()              | remember-me认证                          |
+> | permitAll                 | 始终true                                 |
+> | principal                 | 用户主要信息对象                         |
+
++ `@PreAuthorize`
+
+  > 在方法调用前，基于表达式计算结果来限制方法访问
+  >
+  > 例：@PreAuthorize("hasRole('ROLE_ADMIN')")
+
++ `@PostAuthorize`
+
+  > 允许方法调用，但是如果表达式结果为fasle则抛出异常
+
+  例
+
+  ```java
+  @PostAuthorize("returnObject.id%2==0")
+  public User find(int id) {
+      User user = new User();
+      user.setId(id);
+      return user;
+  }
+  ```
+
+  ​	上面这一段代码表示将在方法find()调用完成后进行权限检查，如果返回值的id是偶数则表示校验通过，否则表示校验失败，将抛出AccessDeniedException。       需要注意的是@PostAuthorize是在方法调用完成后进行权限检查，它不能控制方法是否能被调用，只能在方法调用完成后检查权限决定是否要抛出AccessDeniedException
+
++ `@PostFilter`
+
+  > 允许方法调用，但必须按表达式过滤方法结果
+  >
+  > Spring Security将移除使对应表达式的结果为false的元素。
+
+  ```java
+  @PostFilter("filterObject.id%2==0")
+  public List<User> findAll() {
+      List<User> userList = new ArrayList<User>();
+      User user;
+      for (int i=0; i<10; i++) {
+          user = new User();
+          user.setId(i);
+          userList.add(user);
+      }
+      return userList;
+  }
+  ```
+
++ `@PreFilter`
+
+  > 允许方法调用，但必须在进入方法前过滤输入值
+  >
+  > Spring Security将移除使对应表达式的结果为false的元素。
+
+  ```java
+  @PreFilter(filterTarget="ids", value="filterObject%2==0")
+  public void delete(List<Integer> ids, List<String> usernames) {
+      ...
+  }
+  ```
