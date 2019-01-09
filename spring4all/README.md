@@ -137,10 +137,6 @@
   }
   ```
 
-### 角色
-
-security中没有默认的角色，每一个不同的字符串都可以认为是1个角色名
-
 ## CSRF
 
 - 什么是CSRF攻击
@@ -527,138 +523,6 @@ public class UserServiceImpl implements UserService {
   }
   ```
 
-
-## OAuth2
-
-> OAuth2是用于第三方授权登录的开放网络标准
->
-> [rfc6749](https://tools.ietf.org/html/rfc6749) 
-
-### 角色
-
-+ **Third-party application**：第三方应用程序，又称"客户端"（client）
-+ **HTTP service**：HTTP服务提供商
-+ **Authorization server**：HTTP服务提供商的认证服务器
-+ **Resource server**：HTTP服务提供商的资源服务器
-+ **Resource Owner**：资源所有者，又称"用户"
-+ **User Agent**：用户代理，就是浏览器
-
-### 授权模式
-
-> OAuth 2.0定义了四种授权方式
->
-> + 授权码模式
-> + 密码模式
-> + 客户端模式
-> + 简化模式（不常用，这里不介绍）
-
-#### 授权码模式
-
-> 授权码模式（authorization code）是功能最完整、流程最严密的授权模式。也是qq、微信、github等大型网站使用的模式
-
-![image-20181014191805691](assets/image-20181014191805691.png)   
-
-+ A
-
-  > `客户端`在返回登录页时，会将1个向`认证服务器`请求授权的GET请求链接包含在页面中一起返回
-  >
-  > 当`用户`点击该链接后，`浏览器`向`认证服务器`发送1个GET请求，目的是从`认证服务器`获取1个`code`
-
-  参数：
-
-  + response_type：表示授权类型，必选项，此处的值固定为`code`；
-
-    > 部分`认证服务器`不要求该参数，具体参见对应`认证服务器`的使用说明
-
-  + client_id：表示客户端的ID，必选项；
-
-    > 在`服务提供商`上创建应用后获得
-
-  + redirect_uri：表示重定向URI，可选项；
-
-    > + 用户在认证服务器上通过认证后，认证服务器会生成1个`code`返回给客户端，该参数配置的就是将`code`返回给客户端服务器时需要的回调地址
-    >
-    > + 如果不配置该参数，默认使用在`服务提供商`上创建应用时配置的`redirect_uri`
-    >
-    >   如果指定该参数，则回调地址会使用指定的`redirect_uri`，但会指定的`redirect_uri`必须与创建应用时配置的`redirect_uri`相同或是配置的`redirect_uri`的子地址
-    >
-    >   如：创建应用时配置的是`www.bymyself.club/login/github`
-    >
-    >   则指定该参数时可以指定为`www.bymyself.club/login/github`或`www.bymyself.club/login/github/test`，但是不能配置为``www.bymyself.club/login/test`
-
-  + scope：表示申请的权限范围，可选项
-
-    > 该参数没有备选值，由`服务提供商`自行定义可接受哪些参数
-
-  + state：可以指定任意值，认证服务器会原封不动地返回这个值。
-
-    > 用于防止CSRF攻击，与前面讲到的`_csrf`参数是1个东西
-
-+ B
-
-  > `认证服务器`返回登录页面，让用户进行登录并授权
-
-+ C
-
-  > 用户填写他在`认证服务器`上的用户名密码进行登录并进行授权
-
-+ D
-
-  > + `认证服务器`返回1个重定向的响应
-  >
-  > + 该响应会携带用户登录`认证服务器`产生的cookie
-  >
-  > + 重定向地址为`${redirect_uri}?code=xxxxx&state=${state}`
-  >   + redirect_uri：创建应用时或在A步中请求`认证服务器`时指定的`redirect_uri`
-  >   + code：认证通过后返回的code，用于下一步客户端从`认证服务器`获取`token`
-  >   + state：A步中请求`认证服务器`时指定的`state`被原封不动的返回
-  >
-  > + 浏览器接收到重定向响应后直接重定向到`${redirect_uri}?code=xxxxx&state=${state}`
-
-+ E
-
-  > 客户端使用接收到的`code`，创建应用时生成的`client_id`、`client_secret`请求认证服务器，来获取token
-
-  参数：
-
-  - grant_type：表示授权类型，必选项，此处的值固定为`authorization_code`；
-
-    > 部分`认证服务器`不要求该参数，具体参见对应`认证服务器`的使用说明
-
-  - code：上一步得到的`code`，必选项
-
-  - redirect_uri：同A步中的`redirect_uri`，非必须
-
-  - client_id：表示客户端的ID，必选项；
-
-    > 在`服务提供商`上创建应用后获得
-
-  - client_secret 表示客户端的ID对应的秘钥，必选项；
-
-    > 在`服务提供商`上创建应用后获得
-
-+ F
-
-  > `认证服务器`返回token以及一些其他参数
-
-+ G
-
-  > 客户端将获得的token作为GET请求的参数或设置到请求头中，来向资源服务器获取资源
-  >
-  > 具体过程参见要使用的服务提供商的说明
-
-+ H
-
-  > 资源服务器返回资源
-
-#### 密码模式
-
-> 密码模式就是用户将自己位于`服务提供商`的`认证服务器`上的账号密码都交给客户端，由客户端自己去申请授权并拉取资源
-
-#### 客户端模式
-
-> 客户端模式其实与用户没有任何关系，客户端向认证服务器发送请求来验证自己的身份，通过验证后从资源服务器获取资源
-
 ## CORS
 
 ### 配置
@@ -886,3 +750,5 @@ demo参见[产业地图](https://github.com/Mshuyan/industry-map)
       ...
   }
   ```
+
+
