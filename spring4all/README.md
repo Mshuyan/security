@@ -680,21 +680,29 @@ demo参见[产业地图](https://github.com/Mshuyan/industry-map)
 
 #### 方法调用前后注解
 
-> 以下注解支持SpEL表达式，security支持的表达式如下：
+> 以下注解支持SpEL表达式，
 >
-> | 安全表达式                | 计算结果                                 |
-> | ------------------------- | ---------------------------------------- |
-> | authentication            | 用户认证对象                             |
-> | denyAll                   | 结果始终为false                          |
-> | hasAnyRole(list of roles) | 如果用户被授权指定的任意权限，结果为true |
-> | hasRole(role)             | 如果用户被授予了指定的权限，结果 为true  |
-> | hasIpAddress(IP Adress)   | 用户地址                                 |
-> | isAnonymous()             | 是否为匿名用户                           |
-> | isAuthenticated()         | 不是匿名用户                             |
-> | isFullyAuthenticated      | 不是匿名也不是remember-me认证            |
-> | isRemberMe()              | remember-me认证                          |
-> | permitAll                 | 始终true                                 |
-> | principal                 | 用户主要信息对象                         |
+> 对应源码位于`org.springframework.security.access.expression.SecurityExpressionRoot`
+>
+> security支持的表达式如下：
+>
+> | 安全表达式                         | 计算结果                                 | 例                                                           |
+> | ---------------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+> | authentication                     | 用户认证对象                             | 用法同`principal`                                            |
+> | denyAll                            | 结果始终为false                          |                                                              |
+> | hasAuthority([auth])               | 如果用户被授予了指定的权限，结果 为true  |                                                              |
+> | **hasAnyAuthority([auth1,auth2])** | 如果用户被授权指定的任意权限，结果为true |                                                              |
+> | hasAnyRole(list of roles)          | 如果用户被授权指定的任意角色，结果为true |                                                              |
+> | hasRole(role)                      | 如果用户被授予了指定的角色，结果 为true  |                                                              |
+> | hasIpAddress(IP Adress)            | 用户地址                                 |                                                              |
+> | isAnonymous()                      | 是否为匿名用户                           |                                                              |
+> | isAuthenticated()                  | 不是匿名用户                             |                                                              |
+> | isFullyAuthenticated               | 不是匿名也不是remember-me认证            |                                                              |
+> | isRemberMe()                       | remember-me认证                          |                                                              |
+> | permitAll                          | 始终true                                 |                                                              |
+> | principal                          | 用户主要信息对象                         | @PreAuthorize("principal.username.equals(#username)")<br />`#username`是接口方法参数列表中参数名 |
+>
+> 
 
 + `@PreAuthorize`
 
@@ -752,4 +760,14 @@ demo参见[产业地图](https://github.com/Mshuyan/industry-map)
   }
   ```
 
+#### `hasRole`与`hasAuthority`区别
 
++ 参见[Spring Security 中的 hasRole 和 hasAuthority 有区别吗](https://cloud.tencent.com/developer/article/1703187)
+
++ 两者没有本质区别，源码上得区别在于：
+
+  `hasRole`会自动加上`ROLE_`前缀，数据库需要保存包括`ROLE_`前缀得值
+
++ 这是历史遗留问题导致存在这两种注解
+
++ 推荐使用`hasAuthority`
